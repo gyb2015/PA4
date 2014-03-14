@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script>
+        function getNBAStats() {
+            $.ajax({
+                contentType: "application/json; charset=utf-8",
+                url: "http://ec2-54-186-78-163.us-west-2.compute.amazonaws.com/query.php",
+                data: { playerName: $("#SearchItem").val() },
+                dataType: "jsonp",
+                success: onDataReceived,
+                error: function (msg) {
+                    $("#logger").html("getNBAStats(): ");
+                    $("#logger").append(JSON.stringify(msg));
+                }
+                 
+            });
+        }
+
+        function onDataReceived(data)
+        {
+            $player = data[0];
+            console.log(data);
+            
+            $("#logger").html(""+$player['playerName'] + '    '+ $player['GP']+'    '+$player['FGP']+'    '+$player['TPP']+'    '+$player['FTP']+'    '+$player['PPG']);
+
+        }
+
+        function startCrawler() {
+            $.ajax({
+                url: "Admin.asmx/StartCrawler",
+                type: "POST",
+                data: "{}",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                error: function (msg) {
+                    $("#logger").html("startCrawler(): ");
+                    $("#logger").append(JSON.stringify(msg));
+                }
+            });
+        }
+
+        function stopCrawler() {
+            $.ajax({
+                url: "Admin.asmx/StopCrawler",
+                type: "POST",
+                data: "{}",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                error: function (msg) {
+                    $("#logger").html("stopCrawler(): ");
+                    $("#logger").append(JSON.stringify(msg));
+                }
+            });
+        }
+
+        function clearCrawler() {
+            $.ajax({
+                url: "Admin.asmx/ClearCrawler",
+                type: "POST",
+                data: "{}",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                error: function (msg) {
+                    $("#logger").html("clearCrawler(): ");
+                    $("#logger").append(JSON.stringify(msg));
+                }
+            });
+        }
+        
+        function getStats() {
+            $.ajax({
+                url: "Admin.asmx/GetStats",
+                type: "POST",
+                data: "{}",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (msg) {
+                    $("#stats").html(msg.d);
+                },
+                error: function (msg) {
+                    $("#logger").html("getStats(): ");
+                    $("#logger").append(JSON.stringify(msg));
+                }
+            });
+        }
+        
+        function getSuggestion(event) {
+            if (event.keyCode == 13) {
+                return search();
+            }
+
+            var word = $("#SearchItem").val();
+            if (word.length == 0) {
+                $("#suggestion").hide();
+                return;
+            }
+
+            $.ajax({
+                url: "Admin.asmx/GetSearchSuggestions",
+                type: "POST",
+                data: "{input:'" + escape(word) + "'}",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (msg) {
+                    $("#suggestion").show();
+                    if (msg.d.length > 0) {
+                        $("#suggestion").empty();
+                        for (var i = 0; i < msg.d.length; i++) {
+                            $("#suggestion").append(msg.d[i] + "<br/>");
+                        }
+                    }
+                    else {
+                        $("#suggestion").html("No suggestion");
+                    }
+                },
+                error: function (msg) {
+                    $("#logger").html("getSuggestion(): ");
+                    $("#logger").append(JSON.stringify(msg));
+                }
+            });
+        }
+
+        function search() {
+            $.ajax({
+                url: "Admin.asmx/Search",
+                type: "POST",
+                data: "{searchItem:'" + escape($("#SearchItem").val()) + "'}",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (msg) {
+                    $("#result").empty();
+                    for (var i = 0; i < msg.d.length; i++) {
+                        $("#result").append(msg.d[i] + "<br/>");
+                    }
+                    $("#suggestion").hide();
+                },
+                error: function (msg) {
+                    $("#logger").html("search(): ");
+                    $("#logger").append(JSON.stringify(msg));
+                }
+            });
+        }
+        
+        setInterval(getStats, 100);
+    </script>
+</head>
+<body>
+    <div align="center" style="white-space: nowrap;">Search: <input id="SearchItem" type="text" style="width:400px;" onkeyup="getSuggestion(event)" /> <input type="button" onclick="search()" value="Search" /></div>
+    <div align="center"><div align="left" id="suggestion" style="width:600px;border:1px solid black;display:none;">[Suggestion placeholder]</div></div>
+    <br />
+    <div id="result" style="white-space: nowrap;"></div>
+    <hr />
+    <!--<input type="button" onclick="startCrawler()" value="Start Crawler" /> 
+    <input type="button" onclick="stopCrawler()" value="Stop Crawler" /> 
+    <input type="button" onclick="clearCrawler()" value="Clear Crawler" />--> 
+    <input type="button" onclick="getNBAStats()" value="Get NBA Stats" /> 
+    <br />
+    <div id="stats" style="white-space: nowrap;">
+        Crawler State: <br />
+        CPU Utilization: <br />
+        RAM available: <br />
+        #URLs crawled: <br />
+        Size of queue: <br />
+        Size of index: <br />
+        #suggestions available: <br />
+        Last 10 URLs crawled: <br />
+    </div>
+    <hr />
+    <div id="logger"></div>
+    <script type='text/javascript' src='http://ads1.qadabra.com/t?id=8ed11dda-a2f8-49fc-ae80-7083ee69cd56&size=300x250'></script>
+</body>
+</html>
